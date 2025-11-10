@@ -1,0 +1,12 @@
+[package]
+name = "bevy_asynk_strim"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+asynk-strim = "0.1.3"
+bevy = { version = "0.17.2", default-features = false }
+
+[dev-dependencies]
+bevy = { version = "*", default-features = false, features = ["bevy_log"] }
+async-io = "2.6.0"
