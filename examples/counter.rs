@@ -32,9 +32,14 @@ fn setup(mut commands: Commands) {
 
 #[allow(clippy::type_complexity)]
 fn print_counter(
-    counter_stream: Query<&StreamValue<u32>, (With<CounterStream>, Changed<StreamValue<u32>>)>,
+    mut counter_stream: Query<
+        &mut StreamValue<u32>,
+        (With<CounterStream>, Changed<StreamValue<u32>>),
+    >,
 ) {
-    if let Some(stream_value) = counter_stream.iter().next() {
-        info!("Counter: {}", stream_value.0);
+    if let Some(mut stream_value) = counter_stream.iter_mut().next()
+        && let Some(value) = stream_value.consume()
+    {
+        info!("Counter: {}", value);
     }
 }

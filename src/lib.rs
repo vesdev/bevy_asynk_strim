@@ -21,7 +21,13 @@ pub struct StreamHandle {
 }
 
 #[derive(Component)]
-pub struct StreamValue<T: Send + Sync>(pub T);
+pub struct StreamValue<T: Send + Sync>(pub Option<T>);
+
+impl<T: Send + Sync> StreamValue<T> {
+    pub fn consume(&mut self) -> Option<T> {
+        self.0.take()
+    }
+}
 
 struct StreamState<T: Send + 'static> {
     stream: Box<dyn Stream<Item = T> + Send + Sync + Unpin>,
@@ -87,9 +93,11 @@ impl SpawnStreamExt for Commands<'_, '_> {
             };
 
             if let Some(mut value) = world.get_mut::<StreamValue<T>>(entity) {
-                value.0 = new_value;
+                value.0 = Some(new_value);
             } else {
-                world.entity_mut(entity).insert(StreamValue(new_value));
+                world
+                    .entity_mut(entity)
+                    .insert(StreamValue(Some(new_value)));
             }
 
             task = Some(taskpool.spawn(async move { state }));

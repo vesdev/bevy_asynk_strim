@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_asynk_strim"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-io",
  "asynk-strim",
