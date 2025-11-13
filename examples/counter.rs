@@ -1,5 +1,5 @@
-use bevy::{prelude::*, tasks::futures_lite::Stream};
-use bevy_asynk_strim::{SpawnStreamExt, StreamPlugin, StreamValue};
+use bevy::prelude::*;
+use bevy_asynk_strim::{SpawnStreamExt, Stream, StreamBuilder, StreamPlugin};
 
 fn main() {
     App::new()
@@ -11,35 +11,27 @@ fn main() {
 }
 
 #[derive(Component, Default)]
-struct CounterStream;
-
-impl CounterStream {
-    fn new_stream() -> impl Stream<Item = u32> {
-        Box::pin(asynk_strim::stream_fn(|mut yielder| async move {
-            let mut count = 0;
-            loop {
-                yielder.yield_item(count).await;
-                count += 1;
-                async_io::Timer::after(std::time::Duration::from_secs(1)).await;
-            }
-        }))
-    }
-}
+struct Counter;
 
 fn setup(mut commands: Commands) {
-    commands.spawn_stream_marked::<u32, _, CounterStream>(CounterStream::new_stream());
+    let stream = Box::pin(asynk_strim::stream_fn(|mut yielder| async move {
+        let mut count: u32 = 0;
+        loop {
+            yielder.yield_item(count).await;
+            count += 1;
+            async_io::Timer::after(std::time::Duration::from_secs(1)).await;
+        }
+    }));
+
+    let builder = StreamBuilder::new(stream).with_marker::<Counter>();
+
+    commands.spawn_stream(builder);
 }
 
-#[allow(clippy::type_complexity)]
-fn print_counter(
-    mut counter_stream: Query<
-        &mut StreamValue<u32>,
-        (With<CounterStream>, Changed<StreamValue<u32>>),
-    >,
-) {
-    if let Some(mut stream_value) = counter_stream.iter_mut().next()
-        && let Some(value) = stream_value.consume()
-    {
-        info!("Counter: {}", value);
+fn print_counter(streams: Query<&mut Stream<u32>, With<Counter>>) {
+    for mut stream in streams {
+        if let Some(value) = stream.pop() {
+            info!("Counter: {}", value);
+        }
     }
 }
